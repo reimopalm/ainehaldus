@@ -1,56 +1,46 @@
 import csv, re, datetime, openpyxl, os, locale
+from openpyxl.utils import get_column_letter
 
-def failinimed():
+TULEMUSTEFAILINIMI = "tulemused.xlsx"
+
+def küsi_failinimi(küsimus, muster = ""):
     """
-    Teeb kindlaks punktide faili nime ja vastuste faili nime.
-    Kui failid on olemas jooksvas kaustas, siis tagastab need.
-    Vastasel juhul laseb kasutajal failide nimed sisestada käsitsi.
-
-    Tagastab:
-        Tuple[str, str]: Punktide faili nimi ja vastuste faili nimi
+    Küsib kasutajalt failinime või võtab selle etteantud mustri järgi ise, kui leiab.
     """
-    punktidenimi = ""
-    vastustenimi = ""
-
-    for failinimi in os.listdir():
-        if re.search(r'-hinded( [(][0-9]+[)])?[.]csv$', failinimi):
-            punktidenimi = failinimi
-        if re.search(r'-vastused( [(][0-9]+[)])?[.]csv$', failinimi):
-            vastustenimi = failinimi
-        if punktidenimi and vastustenimi:
-            return punktidenimi, vastustenimi
+    if muster:
+        failinimed = [failinimi for failinimi in os.listdir() if re.search(muster, failinimi)]
+        if len(failinimed) == 0:
+            print("Jooksvast kaustast sobivaid faile ei leidnud.")
+        elif len(failinimed) == 1:
+            print(f"Leidsin faili '{failinimed[0]}'.")
+            return failinimed[0]
+        else:
+            print(f"Leidsin {len(failinimed)} sobivat faili:")
+            print("\n".join(failinimed))
 
     while True:
-        punktidenimi = input("Sisesta punktide faili nimi: ")
-        if os.path.exists(punktidenimi):
-            break
-        print("Sellist faili pole")
+        failinimi = input(küsimus.rstrip()+" ").strip()
+        if not failinimi:
+            return
+        if os.path.exists(failinimi):
+            return failinimi
+        print("Sellist faili pole.")
 
-    while True:
-        vastustenimi = input("Sisesta vastuste faili nimi: ")
-        if os.path.exists(vastustenimi):
-            break
-        print("Sellist faili pole")
-
-    return punktidenimi, vastustenimi
-    
-def loefailid():
+def loe_failid(punktidenimi, vastustenimi):
     """
     Loeb punktide failist ja vastuste failist küsimuste tekstid, vastused ja punktid.
 
     Tagastab:
-        list: Tulemuste tabel
+        list: Kõigi andmete tabel
     """
-    punktidenimi, vastustenimi = failinimed()
-
     punktid = []
     with open(punktidenimi, newline='', encoding="utf8") as f:
         lugeja = csv.reader(f)
         for rida in lugeja:
-            if "Perenimi" in rida[0]:
+            if "Perenimi" in rida[0] or "Surname" in rida[0]:
                 maksimumid = [el.split("/")[1] for el in rida[6:]]
                 continue
-            if "Üldine keskmine" in rida[0]:
+            if "Üldine keskmine" in rida[0] or "Overall average" in rida[0]:
                 break
             punktid.append(rida)
 
@@ -58,8 +48,9 @@ def loefailid():
     with open(vastustenimi, newline='', encoding="utf8") as f:
         lugeja = csv.reader(f)
         for rida in lugeja:
-            if "Perenimi" in rida[0]:
-                ülarv = (len(rida) - rida.index("Küsimus 1")) // 2
+            if "Perenimi" in rida[0] or "Surname" in rida[0]:
+                algindeks = rida.index("Küsimus 1") if "Küsimus 1" in rida else rida.index("Question 1")
+                ülarv = (len(rida) - algindeks) // 2
                 print("Küsimuste arv", ülarv)
                 continue
             vastused.append(rida)
@@ -99,10 +90,6 @@ def loefailid():
 def teisenda_kuupäevad(tabel, n):
     """
     Teisendab tabelis kuupäevade veeru klassi datetime objektideks.
-
-    Parameetrid:
-        tabel (list): Tabel, mille kuupäevade veergu soovitakse teisendada.
-        n (int): Kuupäevade veeru indeks tabelis.
     """
     for rida in tabel:
         # Kontrolli, kas veerg on sobiva kujuga
@@ -118,10 +105,6 @@ def teisenda_kuupäevad(tabel, n):
 def teisenda_küsimused(tabel, n):
     """
     Muudab küsimuste veerus olevad unikaalsed väärtused järjestikusteks arvudeks.
-
-    Parameetrid:
-        tabel (list): Tabel, mille küsimuste veergu soovitakse muuta.
-        n (int): Indeks, mis tähistab küsimuste veergu tabelis.
     """
 
     # Kogu erinevad küsimused kokku
@@ -173,17 +156,9 @@ TÜÜP_STACK = 1
 TÜÜP_LÜNKTEKST = 2
 TÜÜP_LOHISTA_PILDILE = 3
 
-
 def küsimuse_tüüp(s):
     """
-    Määrab vastuse lahtri väärtuse järgi küsimuse tüübi.
-
-    Parameetrid:
-        s (str): Sõne, mida küsimuse tüübi määramiseks analüüsitakse.
-
-    Tagastab:
-        str: Küsimuse tüüp, mis võib olla üks järgnevatest: TÜÜP_STACK, TÜÜP_LÜNKTEKST,
-             TÜÜP_LOHISTA_PILDILE või TÜÜP_TEADMATA.
+    Tagastab sõne väärtuse järgi küsimuse tüübi.
     """
     if s.startswith(('Seed:', 'ans1:', 'prt1:')):
         return TÜÜP_STACK
@@ -198,10 +173,6 @@ def teisenda_vastused(tabel, n):
     """
     Eraldab vastuste veeru lahtritest välja tegelikud vastused.
     Kirjutab tegelike vastuste järjendi samasse lahtrisse tagasi.
-
-    Parameetrid:
-        tabel (list): Tabel, mille vastuste veergu soovitakse muuta.
-        n (int): Indeks, mis tähistab vastuste veergu tabelis.
     """
     for rida in tabel:
         s = rida[n]
@@ -226,11 +197,7 @@ def teisenda_vastused(tabel, n):
 
 def teisenda_punktid(tabel, n):
     """
-    Teisendab tabeli veerus punktid ujukomaarvudeks, kus saab.
-
-    Parameetrid:
-        tabel (list): Tabel, mille punktide veergu soovitakse teisendada.
-        n (int): Punktide veeru indeks
+    Teisendab tabeli veerus punktid ujukomaarvudeks ja ümardab sobivalt.
     """
     for rida in tabel:
         if '/' in rida[n]:
@@ -258,13 +225,9 @@ def teisenda_punktid(tabel, n):
             except:
                 rida[n] = '-'
 
-
 def lisa_märked(tabel):
     """
     Lisab tabelisse koodide veeru: kas katse on esimene ja kas katse on parim.
-
-    Parameetrid:
-        tabel: Tabel
     """
     sõn = {}
     for i, rida in enumerate(tabel):
@@ -289,11 +252,8 @@ def lisa_märked(tabel):
 
 def korrasta_tabel(tabel):
     """
-    Korrastab kõik tabeli veerud.
+    Korrastab tabeli veerud.
     Eesnimi, Perenimi, Alustatud, Lõpetatud, {Küsimus, Vastus, Punktid}*, Kokku, Märked
-
-    Parameetrid:
-        tabel
     """
     teisenda_kuupäevad(tabel, 2)
     teisenda_kuupäevad(tabel, 3)
@@ -310,27 +270,9 @@ def korrasta_tabel(tabel):
     teisenda_punktid(tabel, -1)
     lisa_märked(tabel)
 
-def veerutäht(n):
+def kirjuta_fail(tabel):
     """
-    Tagastab veeru numbrile vastava tähe.
-
-    Parameetrid:
-        n (int): Veeru number
-
-    Tagastab:
-        str: Veeru täht
-    """
-    if 0 <= n <= 26:
-        return chr(64 + n)
-    elif 27 <= n <= 52:
-        return 'A' + chr(64 - 26 + n)
-
-def kirjutafail(tabel):
-    """
-    Salvestab tabeli andmed Exceli faili 'tulemused.xlsx'.
-
-    Parameetrid:
-        tabel
+    Salvestab tabeli Exceli faili.
     """
     wb = openpyxl.Workbook()
     ülarv = (len(tabel[0]) - 6) // 3
@@ -391,24 +333,37 @@ def kirjutafail(tabel):
             maxlaius = 0
             for m in range(len(tabel)):
                 try:
-                    laius = len(leht[veerutäht(6+j) + str(m + 2)].value)
+                    laius = len(leht[get_column_letter(6 + j) + str(m + 2)].value)
                 except:
                     laius = 0
                 if laius > maxlaius:
                     maxlaius = laius
-            leht.column_dimensions[veerutäht(6+j)].width = min(maxlaius+2, 30)
-        leht.column_dimensions[veerutäht(6 + vastustearv)].width = 5  # Pun
-        leht.column_dimensions[veerutäht(7 + vastustearv)].width = 5  # Uus
+            leht.column_dimensions[get_column_letter(6 + j)].width = min(maxlaius + 2, 30)
+        leht.column_dimensions[get_column_letter(6 + vastustearv)].width = 5  # Pun
+        leht.column_dimensions[get_column_letter(7 + vastustearv)].width = 5  # Uus
 
         # Filter
-        leht.auto_filter.ref = 'A1:' + veerutäht(7 + vastustearv) + str(len(tabel) + 1)
+        leht.auto_filter.ref = 'A1:' + get_column_letter(7 + vastustearv) + str(len(tabel) + 1)
 
-    wb.save('tulemused.xlsx')
+    wb.save(TULEMUSTEFAILINIMI)
 
-tabel = loefailid()
-# print(len(tabel), tabel[0][:10])
-# teisenda_küsimused(tabel, 4+6*3)
+def main():
+    """
+    Küsib punktide ja vastuste failide nimesid, loeb vastused sisse ja moodustab Exceli faili.
+    """
+    punktidenimi = küsi_failinimi("Sisesta punktide faili nimi:", r'-(hinded|grades)( [(][0-9]+[)])?[.]csv$')
+    if not punktidenimi:
+        return
 
-if tabel:
-    korrasta_tabel(tabel)
-    kirjutafail(tabel)
+    vastustenimi = küsi_failinimi("Sisesta vastuste faili nimi:", r'-(vastused|responses)( [(][0-9]+[)])?[.]csv$')
+    if not vastustenimi:
+        return
+
+    tabel = loe_failid(punktidenimi, vastustenimi)
+
+    if tabel:
+        korrasta_tabel(tabel)
+        kirjuta_fail(tabel)
+
+if __name__ == "__main__":
+    main()

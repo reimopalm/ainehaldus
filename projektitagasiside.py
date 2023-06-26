@@ -1,191 +1,228 @@
-import openpyxl, re, os.path, statistics
+import datetime, locale
+import os, re, csv
+
+def küsi_failinimi(küsimus, muster = ""):
+    """
+    Küsib kasutajalt failinime või võtab selle etteantud mustri järgi ise, kui leiab.
+    """
+    if muster:
+        failinimed = [failinimi for failinimi in os.listdir() if re.search(muster, failinimi)]
+        if len(failinimed) == 0:
+            print("Jooksvast kaustast sobivaid faile ei leidnud.")
+        elif len(failinimed) == 1:
+            print(f"Leidsin faili '{failinimed[0]}'.")
+            return failinimed[0]
+        else:
+            print(f"Leidsin {len(failinimed)} sobivat faili:")
+            print("\n".join(failinimed))
+
+    while True:
+        failinimi = input(küsimus.rstrip()+" ").strip()
+        if not failinimi:
+            return
+        if os.path.exists(failinimi):
+            return failinimi
+        print("Sellist faili pole.")
+
+def loe_andmed(failinimi):
+    """
+    Loeb etteantud nimega csv-failist vastused sisse.
+
+    Tagastab:
+        küsimused (list): erinevate küsimuste järjend
+        tabel (list): kõik vastused tabelina
+    """
+    try:
+        f = open(failinimi, newline='', encoding="UTF-8")
+    except:
+        print(f"Tagasisidefaili '{failinimi}' ei saa avada.")
+        return
+
+    küsimused = []
+    tabel = []
+
+    lugeja = csv.reader(f)
+    päiserida = next(lugeja)
+    for küsimus in päiserida[3:]:
+        if küsimus not in küsimused:
+            küsimused.append(küsimus)
+    küsimuste_arv = len(küsimused)
+    if (len(päiserida)-3) % küsimuste_arv != 0:
+        print(f"Päiserea struktuur pole ühtlane: {len(päiserida)-3} küsimust ja {len(küsimused)} erinevat.")
+        return
+
+    for k in range(küsimuste_arv):
+        for j in range(3+k+küsimuste_arv, len(päiserida), küsimuste_arv):
+            if päiserida[3+k] != päiserida[j]:
+                print(f"Küsimusteplokid pole ühesugused.")
+                print(f"1. ploki {k+1}. küsimus on '{päiserida[3+k]}'")
+                print(f"{(j-3-k)//küsimuste_arv+1}. ploki {k+1}. küsimus on '{päiserida[j]}'")
+                return
+
+    for rida in lugeja:
+        rida = list(map(str.strip, rida))
+        m = re.search('(?:Projekt|Rühm|Project|Group) (\w+)', rida[1])
+        rida[1] = m.group(1) if m else ""
+        tabel.append(rida)
+    f.close()
+
+    assert len(set(len(rida) for rida in tabel)) == 1
+
+    return küsimused, tabel
+
+def kirjuta_tulemused(küsimused, sõnastik, failinimi):
+    """
+    Moodustab tulemusfaili. Ette antakse küsimuste järjend ja korrastatud vastuste sõnastik.
+    """
+    try:
+        f = open(failinimi, 'a', encoding="UTF-8")
+    except:
+        print(f"Ei saa avada faili {failinimi}.")
+        return
+
+    proj_kaupa = isinstance(list(sõnastik.keys())[0], str)
+
+    # Üldpäis
+    if proj_kaupa:
+        pealkiri = os.path.basename(failinimi)
+        pealkiri = os.path.splitext(pealkiri)[0]
+        f.write(f'<h1 style="text-align: center;">{pealkiri}</h1>')
+        locale.setlocale(locale.LC_TIME, '')
+        kuupäev = datetime.datetime.today()
+        pealkiri = kuupäev.strftime("%d. %B %Y")
+        f.write(f'<h2 style="text-align: center;">{pealkiri}</h2>')
+
+    # Jaotise pealkiri
+    pealkiri = '(a) Projektide' if proj_kaupa else '(b) Hindajate'
+    f.write(f'<h1>{pealkiri} kaupa</h1>\n')
+    for i, küsimus in enumerate(küsimused, start=1):
+        f.write(f'Küs {i}. {küsimus}<br>')
+    f.write('<p></p>\n')
+
+    nimed = sorted(sõnastik.keys())
+
+    # Kokkuvõtlik tabel
+    f.write('<table>\n')
+    f.write('<tr><th style="text-align: center;">Nr</th>'
+            '<th style="text-align: left;">Nimi</th>')
+    if not proj_kaupa:
+        f.write('<th style="text-align: center;">Rühm</th>')
+    for i in range(len(küsimused)):
+        f.write(f'<th style="text-align: center;">Küs {i+1}</th>')
+    f.write('</tr>\n')
+
+    for i, nimi in enumerate(nimed, start=1):
+        f.write(f'<tr><td style="text-align: center;">{i}.</td>')
+        if proj_kaupa:
+            f.write(f'<td>{nimi}</td>')
+        else:
+            f.write(f'<td>{nimi[1]}</td>'
+                    f'<td style="text-align: center;">{nimi[0]}</td>')
+        for vastused in sõnastik[nimi]:
+            if isinstance(vastused, list):
+                f.write(f'<td style="text-align: center;">{len(vastused)}</td>')
+            elif isinstance(vastused, dict):
+                f.write(f'<td style="text-align: center;">{sum(vastused.values())}</td>')
+        f.write('</tr>\n')
+    f.write('</table>\n')
+
+    # Kõik vastused
+    for nimi in nimed:
+        pealkiri = nimi if proj_kaupa else nimi[1]
+        f.write(f'<h2>{pealkiri}</h2>\n')
+        for k in range(len(küsimused)):
+            f.write(f'<p><b>{küsimused[k]}</b></p>\n')
+            vastused = sõnastik[nimi][k]
+            if k == 0:
+                f.write(f'<p>Vastuste arv {sum(vastused.values())}</p>')
+                continue
+            f.write('<ul>\n')
+            if isinstance(vastused, list):
+                for vastus in vastused:
+                    vastus = vastus.replace('\n', '<br>').replace('&amp;', '&')
+                    f.write(f'<li>{vastus}</li>\n')
+            elif isinstance(vastused, dict):
+                for vastus, arv in vastused.items():
+                    vastus = vastus.rstrip('.').replace('\n', '<br>').replace('&amp;', '&')
+                    f.write(f'<li>{vastus}: {arv}</li>\n')
+            f.write('</ul>\n')
 
 
-def veerutäht(j):
-    if 1 <= j <= 26:
-        return chr(64 + j)
-    else:
-        return chr(64 + (j - 1) // 26) + chr(65 + (j - 1) % 26)
+def main():
+    """
+    Küsib kasutajalt tagasisidefaili nime ja loob html-faili, kus tagasiside on korrastatud
+    projektide kaupa ja hindajate kaupa.
 
+    Vastused korrastatakse järgmisele kujule:
+      {
+        nimi_1: [
+          [K1_v1, K1_v2, K1_v3],
+          {K2_v1: arv1, K2_v2: arv2, K3_v3, arv3}
+          ...
+        ],
+        nimi_2: [
+          [K1_v1, K1_v2, K1_v3],
+          {K2_v1: arv1, K2_v2: arv2, K3_v3, arv3}
+          ...
+        ],
+        ...
+      }
+      Tekstvastusega küsimuste vastused esitatakse järjendina, valikvastustega küsimuste vastused
+      sõnastikuna, kus kirjed on kujul küsimus: vastuste_arv.
+    """
+    failinimi = küsi_failinimi("Sisesta failinimi:", r'.*([tT]agasiside|[fF]eedback).*[.]csv')
+    if not failinimi:
+        return
 
-def lahtritähis(i, j):
-    return veerutäht(j) + str(i)
+    küsimused, tabel = loe_andmed(failinimi)
 
+    küsimuste_arv = len(küsimused)
 
-# i on reanumber, j on veerunumber
-# Ülemine vasak nurk on 1, 1
-def lahtrisisu(leht, i, j):
-    sisu = leht[lahtritähis(i, j)].value
-    if sisu == None:
-        return ''
-    return sisu
+    TEKSTVASTUS = 1
+    VALIKVASTUS = 2
 
+    # Määra küsimuste tüübid
+    tüübid = [TEKSTVASTUS] * küsimuste_arv
+    for k in range(küsimuste_arv):
+        koguarv = 0
+        kõikvastused = set()
+        for rida in tabel:
+            for j in range(3+k, len(rida), küsimuste_arv):
+                if rida[j] not in {"", "0", "-"}:
+                    koguarv += 1
+                    kõikvastused.add(rida[j])
+        if koguarv > 1.4 * len(kõikvastused):
+            tüübid[k] = VALIKVASTUS
 
-def loeandmed(failinimi):
-    # Loeb failist andmed
-    # Tagastab projektide sõnastiku ja hindajate sõnastiku
-    projektis_veerge = 5
-    töövihik = openpyxl.load_workbook(failinimi)
-    leht = töövihik.worksheets[0]
-    ridade_arv = leht.max_row
-    veergude_arv = leht.max_column
-    projektide_arv = (veergude_arv - 3) // projektis_veerge
-
+    # Kogu andmed kokku
     projektid = {}
     hindajad = {}
-
-    for i in range(2, ridade_arv + 1):
-        hindaja_nimi = lahtrisisu(leht, i, 1).strip()
-        hindaja_rühm = lahtrisisu(leht, i, 2).strip()
-        if hindaja_nimi == '':
-            continue
-        if hindaja_nimi not in hindajad:
-            hindaja = dict()
-            hindaja['rühm'] = hindaja_rühm
-            hindaja['väärtus'] = []
-            hindaja['meeldimised'] = []
-            hindaja['soovitused'] = []
-            hindaja['esitlusehinded'] = []
-            hindajad[hindaja_nimi] = hindaja
-
-        for n in range(projektide_arv):
-            projektinimi = lahtrisisu(leht, i, 5 * n + 4).strip()
-            if projektinimi == '':
+    for rida in tabel:
+        rühm_nimi = (rida[1], rida[0])
+        hindajad[rühm_nimi] = [[] if tüüp == TEKSTVASTUS else {} for tüüp in tüübid]
+        for j in range(3, len(rida), küsimuste_arv):
+            projekti_nimi = rida[j]
+            if projekti_nimi == "":
                 continue
-            progväärtus = lahtrisisu(leht, i, 5 * n + 5).strip()
-            meeldis = lahtrisisu(leht, i, 5 * n + 6).strip()
-            soovitus = lahtrisisu(leht, i, 5 * n + 7).strip()
-            esitlusehinne = lahtrisisu(leht, i, 5 * n + 8).strip()
+            if projekti_nimi not in projektid:
+                projektid[projekti_nimi] = [[] if tüüp == TEKSTVASTUS else {} for tüüp in tüübid]
+            for k, tüüp in enumerate(tüübid):
+                vastus = rida[j+k]
+                if vastus not in {"", "0", "-"}:
+                    if tüüp == TEKSTVASTUS:
+                        projektid[projekti_nimi][k].append(vastus)
+                        hindajad[rühm_nimi][k].append(vastus)
+                    elif tüüp == VALIKVASTUS and \
+                            (k == 0 or rühm_nimi[0] not in projekti_nimi.split(maxsplit=2)[0:2]):
+                        projektid[projekti_nimi][k][vastus] = projektid[projekti_nimi][k].get(vastus, 0) + 1
+                        hindajad[rühm_nimi][k][vastus] = hindajad[rühm_nimi][k].get(vastus, 0) + 1
 
-            if projektinimi not in projektid:
-                projektid[projektinimi] = dict()
-                projektid[projektinimi]['väärtus'] = []
-                projektid[projektinimi]['meeldimised'] = []
-                projektid[projektinimi]['soovitused'] = []
-                projektid[projektinimi]['esitlusehinded'] = []
+    # Salvesta tulemused
+    failinimi = os.path.splitext(failinimi)[0] + ".html"
+    if os.path.isfile(failinimi):
+        os.remove(failinimi)
+    kirjuta_tulemused(küsimused, projektid, failinimi)
+    kirjuta_tulemused(küsimused, hindajad, failinimi)
 
-            if progväärtus != '' and hindaja_rühm not in projektinimi:
-                # Enda projekti väärtuse hindamine jätta vahele
-                projektid[projektinimi]['väärtus'].append(progväärtus)
-                hindajad[hindaja_nimi]['väärtus'].append(progväärtus)
-            if meeldis != '':
-                # Enda projekti meeldimised võtta sisse
-                projektid[projektinimi]['meeldimised'].append(meeldis)
-                hindajad[hindaja_nimi]['meeldimised'].append(meeldis)
-            if soovitus != '':
-                # Enda projekti soovitused võtta sisse
-                projektid[projektinimi]['soovitused'].append(soovitus)
-                hindajad[hindaja_nimi]['soovitused'].append(soovitus)
-            if esitlusehinne != '' and hindaja_rühm not in projektinimi:
-                # Enda projekti esitluse hindamine jätta vahele
-                projektid[projektinimi]['esitlusehinded'].append(esitlusehinne)
-                hindajad[hindaja_nimi]['esitlusehinded'].append(esitlusehinne)
-    return projektid, hindajad
-
-
-def väljastaprojektid(projektid, algnimi):
-    # Väljastab projektide tagasiside html-faili
-    # * Punkte projekti väärtusele - keskmine, mediaan
-    # * Mis meeldis - kommentaarid
-    # * Mis ei meeldinud - kommentaarid
-    # * Punkte esitlusele - hinnangud, keskmine
-
-    baasnimi = os.path.splitext(algnimi)[0]
-    failinimi = baasnimi + '-proj.html'
-    projnimed = sorted(projektid.keys())
-    f = open(failinimi, 'w')
-
-    for projnimi in projnimed:
-        f.write('<h1>Project ' + projnimi + '</h1>\n')
-
-        a = projektid[projnimi]['väärtus']
-        pealkirjad = [
-            'Program has exceptional value, can be used in various situations, and provides substantial help to the user.',
-            'Program has good value, fills its place, and provides good help to the user.',
-            'Program is useful in limited situations or with a limited number of inputs.',
-            'Program carries little or no added value; its objectives can easily be achieved by other means.']
-        f.write('<p><b>How do you rate the general value of the program?</b></p>\n')
-        f.write('<ul>\n')
-        summa = kokku = 0
-        arvud = []
-        for i in range(len(pealkirjad)):
-            x = pealkirjad[i]
-            esinemistearv = a.count(x)
-            if esinemistearv > 0:
-                f.write(f'<li>{x.rstrip(".")}: {a.count(x)}</li>\n')
-                summa += (3 - i) * esinemistearv
-                kokku += esinemistearv
-                arvud += [3 - i] * esinemistearv
-        f.write('</ul>\n')
-        keskmine = str(round(summa / kokku, 1)).rstrip('.0')
-        mediaan = str(round(statistics.median(arvud), 1)).rstrip('.0')
-        f.write(f'<p>Average: {keskmine}/3<br>\n')
-        f.write(f'Median: {mediaan}/3</p>\n')
-
-        f.write('<p><b>What did you like in this project?</b></p>\n')
-        f.write('<ul>\n')
-        for rida in projektid[projnimi]['meeldimised']:
-            puhasrida = rida.replace('\n', '<br>')
-            while '&amp;' in puhasrida: puhasrida = puhasrida.replace('&amp;', '&')
-            f.write('<li>' + puhasrida + '</li>\n')
-        f.write('</ul>\n')
-
-        f.write('<p><b>What could have been done differently?</b></p>\n')
-        f.write('<ul>\n')
-        for rida in projektid[projnimi]['soovitused']:
-            if '&amp' in rida:
-                print(repr(rida))
-            puhasrida = rida.replace('\n', '<br>')
-            while '&amp;' in puhasrida: puhasrida = puhasrida.replace('&amp;', '&')
-            f.write('<li>' + puhasrida + '</li>\n')
-        f.write('</ul>\n')
-
-        a = projektid[projnimi]['esitlusehinded']
-        pealkirjad = ['Presentation is informative, correct, complete, and convincing.',
-                      'Presentation is mostly informative and mostly complete.',
-                      'Presentation is somewhat informative but incomplete or unconvincing.',
-                      'Presentation is incoherent, incomprehensible, or incorrect.']
-        f.write('<p><b>How do you rate the presentation?</b></p>\n')
-        f.write('<ul>\n')
-        summa = kokku = 0
-        arvud = []
-        for i in range(len(pealkirjad)):
-            x = pealkirjad[i]
-            esinemistearv = a.count(x)
-            if esinemistearv > 0:
-                f.write(f'<li>{x.rstrip(".")}: {a.count(x)}</li>\n')
-                summa += (3 - i) * esinemistearv
-                kokku += esinemistearv
-                arvud += [3 - i] * esinemistearv
-        f.write('</ul>\n')
-        keskmine = str(round(summa / kokku, 1)).rstrip('.0')
-        mediaan = str(round(statistics.median(arvud), 1)).rstrip('.0')
-        f.write(f'<p>Average: {keskmine}/3<br>\n')
-        f.write(f'Median: {mediaan}/3</p>\n')
-
-    f.close()
-
-
-def väljastahindajad(hindajad, algnimi):
-    # Väljastab hindaja tegevuste kokkuvõtte.
-    # * Mis meeldis - vastuste arv
-    # * Mis ei meeldinud - vastuste arv
-    # * Punkte projektile - vastuste arv
-    # * Punkte esitlusele - vastuste arv
-    baasnimi = os.path.splitext(algnimi)[0]
-    failinimi = baasnimi + '-hind.txt'
-    hindajanimed = sorted(hindajad.keys())
-    f = open(failinimi, 'w')
-    for hindajanimi in hindajanimed:
-        progväärtusarv = len(hindajad[hindajanimi]['väärtus'])
-        meeldimistearv = len(hindajad[hindajanimi]['meeldimised'])
-        soovitustearv = len(hindajad[hindajanimi]['soovitused'])
-        esithindearv = len(hindajad[hindajanimi]['esitlusehinded'])
-        f.write(f'{hindajanimi}\t{progväärtusarv}\t{meeldimistearv}\t{soovitustearv}\t{esithindearv}\n')
-    f.close()
-
-
-failinimi = 'Feedback to the presentations.xlsx'
-projektid, hindajad = loeandmed(failinimi)
-väljastaprojektid(projektid, failinimi)
-väljastahindajad(hindajad, failinimi)
+if __name__ == "__main__":
+    main()
