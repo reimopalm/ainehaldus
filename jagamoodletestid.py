@@ -113,26 +113,35 @@ def teisenda_küsimused(tabel, n):
         küsimus = rida[n]
 
         # Sorteeri valikvastustega küsimuse vastusevariandid
-        m = re.search(r': ((?:.*; )+.*)$', küsimus)
+        m = re.search(r'\n: ((?:.*(?:; |$)){2,})', küsimus, re.S)
         if m:
-            vastused = '; '.join(sorted(m.group(1).split("; ")))
-            küsimus = küsimus[:m.start(1)] + vastused
-            rida[n] = küsimus
+            variandid = m.group(1).split('; ')
+            uusosa = '; '.join(sorted(map(str.strip, variandid)))
+            küsimus = küsimus.replace(m.group(0), f'\n: {uusosa}')
 
         # Lünkteksti valikvastustega küsimused
-        alamosad = re.findall(r'\{(?:[^\n]*; )+[^\n]*\}', küsimus)
+        alamosad = re.findall(r'\{(?:[^\n]*; )+[^\n]*}', küsimus)
         for alamosa in alamosad:
-            variandid = sorted(map(str.strip, alamosa[1:-1].split('; ')))
-            uusosa = '{' + '; '.join(variandid) + '}'
-            küsimus = küsimus.replace(alamosa, uusosa)
-        rida[n] = küsimus
+            variandid = alamosa[1:-1].split("; ")
+            uusosa = '; '.join(sorted(map(str.strip, variandid)))
+            küsimus = küsimus.replace(alamosa, f'{{{uusosa}}}')
 
-        # Pildile lohistamise küsimused
-        m = re.search(r'; \[\[.*\]\] -> \{.*\}.*', küsimus)
+        # Vastavusse seadmise küsimused
+        m = re.search(r'\n\s*{(.*(?:; |))} -> {(.*(?:; |))}$', küsimus, re.S)
         if m:
-            küsimus = küsimus[:m.start(0)]
-            rida[n] = küsimus
+            variandid = [m.group(i+1).split("; ") for i in range(2)]
+            uusosa = [sorted(map(str.strip, variandid[i])) for i in range(2)]
+            küsimus = küsimus.replace(m.group(0), f"\n{{{uusosa[0]}}} -> {{{uusosa[1]}}}")
 
+        # Pildile ja teksti lohistamise küsimused
+        alamosad = re.findall(r'; \[\[.*?]] -> \{.*?}', küsimus, re.S)
+        for alamosa in alamosad:
+            variandid = alamosa[alamosa.index('{'):-1].split(' / ')
+            variandid = [re.sub(r'^\d+\.\s', '', s) for s in variandid]
+            uusosa = ' / '.join(sorted(map(str.strip, variandid)))
+            küsimus = küsimus.replace(alamosa, alamosa[:alamosa.index('{')] + uusosa + '}')
+
+        rida[n] = küsimus
         küsimused.add(küsimus)
 
     küsimused = sorted(küsimused)
@@ -150,48 +159,47 @@ def teisenda_küsimused(tabel, n):
             if küsimus in teisendus:
                 rida[n] = teisendus[küsimus]
 
-
-TÜÜP_TEADMATA = 0
-TÜÜP_STACK = 1
-TÜÜP_LÜNKTEKST = 2
-TÜÜP_LOHISTA_PILDILE = 3
-
-def küsimuse_tüüp(s):
-    """
-    Tagastab sõne väärtuse järgi küsimuse tüübi.
-    """
-    if s.startswith(('Seed:', 'ans1:', 'prt1:')):
-        return TÜÜP_STACK
-    elif s.startswith(('osa 1:', 'part 1:', 'часть 1:', 'partie 1 :', 'Teil 1:')):
-        return TÜÜP_LÜNKTEKST
-    elif s.startswith(('Kukutusala 1', 'Drop zone 1', 'Зона 1', 'Zone de dépôt 1', 'Dropzone 1')):
-        return TÜÜP_LOHISTA_PILDILE
-    else:
-        return TÜÜP_TEADMATA
-
 def teisenda_vastused(tabel, n):
     """
-    Eraldab vastuste veeru lahtritest välja tegelikud vastused.
-    Kirjutab tegelike vastuste järjendi samasse lahtrisse tagasi.
-    """
+        Eraldab vastuste veeru lahtritest välja tegelikud vastused.
+        Kirjutab tegelike vastuste järjendi samasse lahtrisse tagasi.
+        """
     for rida in tabel:
-        s = rida[n]
-        tüüp = küsimuse_tüüp(s)
+        vastus = rida[n]
 
-        if tüüp == TÜÜP_STACK:
-            if not re.search("ans[0-9]+: ", s):
+        # Stack
+        if vastus.startswith(('Seed:', 'ans1:', 'prt1:')):
+
+            if not re.search("ans[0-9]+: ", vastus):
                 rida[n] = '-'
                 continue
-            osad = re.findall(r'ans[0-9]+: "?(.*?)"? \[(?:score|invalid)\];', s)
-        elif tüüp == TÜÜP_LÜNKTEKST:
+            osad = re.findall(r'ans[0-9]+: "?(.*?)"? \[(?:score|invalid)];', vastus)
+
+        # Lünktekst
+        elif vastus.startswith(('osa 1:', 'part 1:', 'часть 1:', 'partie 1 :', 'Teil 1:')):
             osad = re.findall(r'(?:osa [0-9]+|part [0-9]+|часть [0-9]+|partie [0-9]+ |Teil [0-9]+): '
-                              r'(.*?)(?:; |$)', s)
-        elif tüüp == TÜÜP_LOHISTA_PILDILE:
-            osad = re.findall(r'{.*? ([0-9]+)}', s)
-        elif '; ' in s:
-            osad = sorted(s.split('; '))
+                              r'(.*?)(?:; |$)', vastus)
+
+        # Lohista pildile
+        elif vastus.startswith(('Kukutusala 1', 'Drop zone 1', 'Зона 1', 'Zone de dépôt 1', 'Dropzone 1')):
+            osad = re.split(r'(?:\s*Kukutusala|Drop zone|Зона|Zone de dépôt|Dropzone)\s+\d+ -> ', vastus)
+            del osad[0]
+            osad = [s[1:-1] for s in osad]
+
+        # Lohista teksti
+        elif re.search(r'^({.*?}( |$))+', vastus):
+            osad = re.findall(r'{(.*?)}', vastus)
+
+        # Vastavusse seadmine
+        elif re.search(r'^(.*? -> .*?(; |$))+', vastus, re.S):
+            osad = [s.split(' -> ')[-1] for s in sorted(vastus.split('; '))]
+
+        # Valikvastus
+        elif '; ' in vastus:
+            osad = sorted(vastus.split('; '))
+
         else:
-            osad = s
+            osad = vastus
 
         rida[n] = osad if osad else ''
 

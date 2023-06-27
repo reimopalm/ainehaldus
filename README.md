@@ -1,28 +1,29 @@
 # Ainete haldamise tööriistad
 
-Pythoni programmid ülikooli õppeainete läbiviimisel sagedamini ettetulevate tegevuste sooritamiseks, peamiselt Moodle'ist saadud andmete töötlemiseks.
+Pythoni programmid ülikooli õppeainete läbiviimisel sagedamini ettetulevate tegevuste sooritamiseks, peamiselt Moodle'ist saadud andmete töötlemiseks. Võite kasutada sellisena nagu on või kohandada oma vajaduste järgi.
 
 ## jagamoodletestid.py
 
-Koondab Moodle'i testikatsete vastused ja punktide arvud ühte Exceli tabelisse, kus neid saab ülevaatlikult analüüsida.
+Paigutab Moodle'i testi vastused ja punktide arvud ülevaatlikult Exceli tabelisse. Sobib näiteks testiküsimuste toimimise uurimiseks, samuti vastuste käsitsi ülevaatamiseks.
 
 ### Kasutamine
 
-1. Laadida alla kaks faili, hinnete alt punktide tabel ja vastuste alt vastuste tabel, mõlemad csv-vormingus, ning tõsta sobivasse kausta.
+1. Laadida alla kaks faili, testi hinnete alt punktide tabel ja testi vastuste alt vastuste tabel, mõlemad csv-vormingus, ning tõsta sobivasse kausta.
 2. Selles kaustas olles käivitada programm `jagamoodletestid`.
-3. Kui programm emba-kumba sisendfaili automaatselt üles ei leia, siis küsib selle nime.
 
-Tulemuseks tekib Exceli tabel, kus iga küsimuse kohta on üks leht. Igal lehel on kirjas kõigi testisooritajate kõik vastused loetaval kujul. Vastused on järjestatud punktide arvu kahanemise järjekorras.
+Programm leiab sisendfailid jooksvast kaustast ise üles. Kui ta seda ei suuda, siis küsib failinime kasutajalt. Sisestada võib ka alamkaustas oleva faili koos otsimisteega.
 
-Veerus EP asub kahekohaline kood, mille esimene number näitab, kas see katse oli vastava lahendaja jaoks esimene, ja teine number, kas see katse oli parim. Küsimuse numbri määrab  küsimusevariantide arvu järgi. Punktide arvu teisendab skaalale 0-1. Veergu Uus võib kirjutada uue punktide arvu.
+Tulemusena luuakse Exceli tabel, kus iga küsimuse kohta on üks leht, millel on kirjas kõigi testisooritajate sellele küsimusele antud vastused loetaval kujul. Vastused on järjestatud punktide arvu kahanemise järjekorras. Tabelis saab vastuseid kõigi veergude järgi filtreerida.
+
+Veerus EP asub kahekohaline kood, mille esimene number näitab, kas see katse oli vastaja jaoks esimene, ja teine number, kas see katse oli parim. Küsimuse number määratakse küsimuse variantide arvu järgi. Kui küsimus kasutab juhuslikkust ja vastuse osad seetõttu on juhuslikus järjekorras, siis sorteeritakse need tähestikuliselt. Punktide arv teisendatakse skaalale 0-1, püüdes tulemust mõistlikult ümardada. Veergu Uus võib kirjutada uue punktide arvu või muu oma kommentaari.
 
 ## jagamoodlefailid.py
 
-Jagab Moodle'ist allalaaditud esituste zip-failis olevad tööd esitajate järgi alamkaustadesse. Niimoodi saab kõik tööd ühekorraga alla laadida ja vaadata need läbi oma arvutis.
+Jagab Moodle'ist allalaaditud esituste zip-failis olevad tööd esitajate järgi alamkaustadesse. Niimoodi saab kõik tööd ühekorraga alla laadida ja tegeleda nendega oma arvutis.
 
 * Toimib nii Moodle'i ülesande kui ka VPL-harjutuse vahendist saadud failidega.
 * Eemaldab Moodle'i lisatud tehnilise info, jättes alles ainult õppija esitatud failid.
-* Lisaks moodustab parandamise tekstifaili kõigi esitajate nimedega ajalises järjekorras.
+* Lisaks moodustab parandamise jaoks abifaili kõigi esitajate nimedega ajalises järjekorras.
 * Toetab korduvat käivitamist: uuest failist pakib lahti ainult need esitused, kus on midagi muutnud.
 
 ### Kasutamine
@@ -30,24 +31,24 @@ Jagab Moodle'ist allalaaditud esituste zip-failis olevad tööd esitajate järgi
 1. Ülesande või VPL-harjutuse vahendist allalaaditud fail tõsta sobivasse kausta.
 2. Selles kaustas olles käivitada programm `jagamoodlefailid`.
 3. Programm püüab sisendfaili ise üles leida. Kui ta seda ei suuda, siis küsib failinime.
-4. Sisestada ülesannete maksimaalsed punktide arvud ühes reas. Mitme arvu puhul eraldada need üksteisest koma, semikooloni või tühikuga.
+4. Sisestada ülesannete maksimaalsed punktide arvud ühes reas. Mitme arvu puhul eraldada need üksteisest tühiku, koma või semikooloniga.
 
 Tulemuseks tekib iga õppija kohta alamkaust, mille sisuks kõik tema esitatud failid. Lisaks moodustatakse parandamise jaoks fail `parandamine.txt`, kuhu võib kirjutada ülesannete punktid ja tagasiside.
 
-Muutunud esituse kirjutab uude alamkausta, mille nime lõpus on järjekorranumber, samuti lisab uue kirje parandamise faili lõppu. Olemasolevaid andmeid üle ei kirjuta.
+Kui esitust on muudetud, siis paigutab selle uude alamkausta, mille nime lõpus on järjekorranumber, samuti lisab uue kirje parandamise faili lõppu. Olemasolevaid andmeid üle ei kirjuta.
 
 ## jagapdf.py
 
-Võimaldab teha pdf-failidega mitmesuguseid tegevusi. Mõeldud esmajoones pabertööde sisseskannimisel saadud pdf-failide töötlemiseks, aga enamikku tegevustest saab teha ükskõik milliste pdf-failidega.
+Võimaldab teha pdf-failidega mitmesuguseid tegevusi. Mõeldud eeskätt pabertööde sisseskannimisel saadud pdf-failide töötlemiseks, aga enamikku tegevustest saab teha ükskõik milliste pdf-failidega.
 
 ### Kasutamine
 
 1. Kõik töödeldavad pdf-failid tõsta sobivasse kausta.
-2. Käivitada programm `jagapdf` ja sisestada tegevuse number.
-3. Vajadusel sisestada tegevuse sooritamiseks vajalikud muud andmed.
+2. Käivitada selles kaustas olles programm `jagapdf` ja sisestada tegevuse number.
+3. Vajadusel sisestada valitud tegevuse sooritamiseks vajalikud muud andmed.
 
 Programmiga saab teha järgmisi tegevusi.
-* 1 - Jaga failid. Tükeldab pdf-failid eraldi pdf-failideks. Kõik saadud failid kirjutab ühte tulemuskausta. Tükeldamise piirid antakse ette failis `algused.txt`, kus on eraldi ridadel kirjas failinimi ja seejärel iga tüki alguslehe number ja nimi, näiteks 
+* 1 - Jaga failid. Tükeldab pdf-failid eraldi pdf-failideks. Saadud failid kirjutab kõik ühte tulemuskausta. Tükeldamise piirid antakse ette failis `algused.txt`, kus on eraldi ridadel kirjas failinimi ja seejärel iga tüki alguslehe number ja nimi. Tükeldatavaid faile võib olla mitu. Nimedeks võivad olla õppijate nimed, laiend lisatakse failile automaatselt. Näiteks: 
 ```
 esimene_tükeldatav_fail.pdf
 1 Esimene Nimi
@@ -58,17 +59,17 @@ teine_tükeldatav_fail.pdf
 3 Viies Nimi
 ```
 
-* 2 - Jaga failid ja loo parandamine. Tükeldab pdf-failid eraldi pdf-failideks ja lisaks moodustab parandamise abifaili `parandamine.txt`. Parandamise faili jaoks sisestada ülesannete maksimumpunktide arvud ühes reas, eraldatult koma, semikooloni või tühikuga. Nimedeks võetakse alguste failis kirjasolevad nimed.
+* 2 - Jaga failid ja loo parandamine. Tükeldab pdf-failid eraldi pdf-failideks ning lisaks moodustab parandamise abifaili `parandamine.txt`. Nimedeks võetakse alguste failis kirjasolevad nimed. Lisaks tuleb sisestada sisestada parandatavate ülesannete maksimumpunktide arvud ühes reas, eraldatult tühiku, koma või semikooloniga. 
 
 * 3 - Kogu failid. Kogub tulemuskaustast pdf-failid kokku üheks suureks pdf-failiks `pdfkogu.pdf`.
 
-* 4 - Moodusta tagasiside. Koostab tulemuskaustas olevate pdf-failide põhjal tagasisidefaili, mille saab Moodle'i ülesande vahendis kõigile korraga tagasisidena üles laadida. Tagasisidefaili koostamiseks vajab sellesama ülesande esitatud tööde alt allalaaditud hindamise töölehte (csv-faili).
+* 4 - Moodusta tagasiside. Paneb tulemuskaustas olevatest pdf-failidest kokku tagasisidefaili, mille saab Moodle'i ülesande vahendis kõigile korraga tagasisidena üles laadida. Vajab tööks selle ülesande hindamise töölehte (csv-faili), mille saab alla laadida Moodle'ist ülesande esituste vaatest.
 
-* 5 - Asenda lehed. Asendab pdf-failis näidatud lehed teise pdf-faili näidatud lehtedega. Ette antakse pdf-faili nimi, asendatatavate lehtede numbrid, teise pdf-faili nimi, teise pdf-faili lehtede numbrid. Lehenumbrite järjendid peavad olema sama pikkusega.
+* 5 - Asenda lehed. Asendab pdf-failis lehed teise pdf-faili lehtedega. Ette antakse pdf-faili nimi, asendatatavate lehtede numbrite loend, teise pdf-faili nimi, teise pdf-faili lehtede numbrite loend. Lehenumbrite loendid peavad olema sama pikkusega, eraldajaks tühik, koma või semikoolon.
 
-* 6 - Muuda lehtede järjestust. Järjestab pdf-failis lehed ümber. Ette antakse pdf-faili nimi ja kaks sama pikka lehenumbrite järjendit. Tulemusena asendatakse esimeses järjendis nimetatud lehed teises järjendis nimetatud lehtedega.
+* 6 - Muuda lehtede järjestust. Järjestab pdf-failis lehed ümber. Ette antakse pdf-faili nimi ja kaks sama pikka lehenumbrite loendit. Tulemusena asendatakse esimeses loendis nimetatud lehed teises loendis nimetatud lehtedega.
 
-* 7 - Pööra lehed ümber. Pöörab pdf-failis näidatud lehti 180 kraadi. Ette antakse pdf-faili nimi ja pööratavate lehtede numbrid.
+* 7 - Pööra lehed ümber. Pöörab pdf-failis lehti 180 kraadi. Ette antakse pdf-faili nimi ja pööratavate lehtede numbrid.
 
 * 8 - Kustuta lehed. Kustutab pdf-failis näidatud lehed. Ette antakse pdf-faili nimi ja kustutatavate lehtede numbrid.
 
@@ -78,36 +79,37 @@ Loob parandamise abifaili `parandamine.txt`.
 
 ### Kasutamine
 
-* Luua fail `nimed.txt`, kus on kirjas õppijate nimed soovitavas järjekorras.
+* Luua sobivasse kausta fail `nimed.txt`, kuhu panna kirja õppijate nimed soovitavas järjekorras.
 * Käivitada programm `looparandamine`.
-* Sisestada ülesannete maksimumpunktide arvud ühes reas, eraldajaks koma, semikoolon või tühik.
+* Sisestada ülesannete maksimumpunktide arvud ühe reana, eraldajaks tühik, koma, semikoolon.
 
-Tulemuseks on fail `parandamine.txt`, kuhu võib kirjutada iga õppija tagasiside ja ülesannete punktide arvud.
+Tulemuseks on fail `parandamine.txt`, kuhu võib kirjutada iga õppija tagasiside ja ülesannete eest saadud punktide arvud.
 
 ## koguprogrammid.py
 
-Kogub näidatud osalejate Pythoni programmid programmid alamkaustadest kokku üheks failiks `programmid.py`. Sobib näiteks siis, kui on vaja koondada kokku ühe osaleja kõik programmid või kui on vaja kiiresti võrrelda paljude osalejejate Thonny logifailide sisu tegelikult esitatud programmidega.
+Kogub osalejate Pythoni programmid alamkaustadest kokku üheks failiks `programmid.py`. Sobib näiteks siis, kui on vaja ühe osaleja kõik programmid ühte kohta koondada või kui on vaja kiiresti võrrelda paljude osalejejate Thonny logifailide sisu tegelikult esitatud programmidega.
 
 ### Kasutamine
 
-1. Luua fail `nimed.txt`, kus on kirjas õppijate nimed soovitavas järjekorras.
+1. Luua põhikausta fail `nimed.txt`, kus on kirjas õppijate nimed soovitavas järjekorras.
 2. Käivitada programm `koguprogrammid`.
-3. Sisestada kaustade nimed, millest osalejaid otsitakse, eraldajaks koma, semikoolon või tühik.
+3. Sisestada alamkaustade nimed, millest osalejaid otsitakse, eraldajaks koma, semikoolon või tühik.
 
-Eeldab, et iga töö jaoks on oma kaust, mille all on omakorda õppijate failide kaustad. Ette antakse tööde kaustad, programm otsib nende seest õppijate kaustu.
+Eeldab, et iga töö jaoks on oma alamkaust, mille all on omakorda õppijate failide kaustad. Ette antakse tööde kaustade nimed, nende seest otsib programm õppijate kaustu.
 
 Tulemuseks moodustatakse fail `programmid.py`, kus on järjest kirjas kõik leitud programmid koos osalejate nimede ja programmide nimedega.
 
 ## projektitagasiside.py
 
-Kogub projektide hindamise küsitlusest kokku vastused ja grupeerib need projektide ning hindajate järgi. 
+Kogub projektide hindamise küsitlusest kokku vastused ja rühmitab need projektide ning hindajate järgi. 
 
 ### Kasutamine
 
 1. Laadida Moodle'ist alla projektide hindamise küsitluse vastuste fail csv-vormingus.
 2. Käivitada programm `projektitagasiside`.
-3. Kui programm vastuste faili automaatselt üles ei leia, siis küsib selle nime.
+
+Kui programm vastuste faili automaatselt üles ei leia, siis küsib selle nime.
 
 Tulemuseks on html-fail, kus on kirjas igale projekti saadud tagasiside ja iga hindaja antud tagasiside.
 
-Eeldab, et küsitlus koosneb samade küsimuste plokkidest, kus iga ploki esimene küsimus on hinnatava projekti nimi. Püüab ise kindlaks teha, kas küsimus oli tekstivastusega või valitava vastusega. Mittesisukad vastused ja projekti autori poolt omaenda projektile antud valikvastused jätab vahele.
+Eeldab, et küsitlus koosneb samasugustest küsimuste plokkidest, kus iga ploki esimene küsimus on hinnatava projekti nimi. Püüab ise kindlaks teha, kas küsimus oli tekstivastusega või valikvastusega. Mittesisukad vastused ja projekti autori poolt omaenda projektile antud valikvastused jätab vahele.

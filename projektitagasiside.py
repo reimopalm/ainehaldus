@@ -94,7 +94,7 @@ def kirjuta_tulemused(küsimused, sõnastik, failinimi):
 
     # Jaotise pealkiri
     pealkiri = '(a) Projektide' if proj_kaupa else '(b) Hindajate'
-    f.write(f'<h1>{pealkiri} kaupa</h1>\n')
+    f.write(f'<h1>{pealkiri} kaupa</h1>\n<h2>Vastuste arvud</h2>')
     for i, küsimus in enumerate(küsimused, start=1):
         f.write(f'Küs {i}. {küsimus}<br>')
     f.write('<p></p>\n')
@@ -130,22 +130,26 @@ def kirjuta_tulemused(küsimused, sõnastik, failinimi):
     for nimi in nimed:
         pealkiri = nimi if proj_kaupa else nimi[1]
         f.write(f'<h2>{pealkiri}</h2>\n')
-        for k in range(len(küsimused)):
-            f.write(f'<p><b>{küsimused[k]}</b></p>\n')
+
+        for k, küsimus in enumerate(küsimused):
+            f.write(f'<p><b>{küsimus}</b></p>\n')
             vastused = sõnastik[nimi][k]
             if k == 0:
                 f.write(f'<p>Vastuste arv {sum(vastused.values())}</p>')
                 continue
-            f.write('<ul>\n')
             if isinstance(vastused, list):
+                f.write('<ul>\n')
                 for vastus in vastused:
                     vastus = vastus.replace('\n', '<br>').replace('&amp;', '&')
                     f.write(f'<li>{vastus}</li>\n')
+                f.write('</ul>\n')
             elif isinstance(vastused, dict):
-                for vastus, arv in vastused.items():
+                f.write('<table>')
+                for vastus, arv in sorted(vastused.items()):
                     vastus = vastus.rstrip('.').replace('\n', '<br>').replace('&amp;', '&')
-                    f.write(f'<li>{vastus}: {arv}</li>\n')
-            f.write('</ul>\n')
+                    f.write(f'<tr><td>{vastus}</td><td width=20px></td><td>{arv}</td>'
+                            f'<td style="color: #666666;">{"&#9608;"*arv}</td></tr>')
+                f.write('</table>')
 
 
 def main():
