@@ -54,24 +54,44 @@ def küsi_punktid():
 def küsi_lehenumbrid(küsimus):
     """
     Küsib kasutajalt lehenumbreid.
-    Sisestada ühe reana, eraldajaks tühik, koma või semikoolon.
+    Sisestada ühe reana, eraldajaks tühikud, komad või semikoolonid.
     """
     while True:
         sisestus = input(küsimus.rstrip()+" ")
         if not sisestus.strip():
             return
+
         arvud = re.findall(r'[^ ,;]+', sisestus)
-        kõik_sobivad = True
-        for i, p in enumerate(arvud):
-            try:
-                arvud[i] = int(p)
-                if arvud[i] < 1:
-                    raise
-            except:
-                print(f"Lehenumber '{p}' ei sobi.")
-                kõik_sobivad = False
-        if kõik_sobivad:
-            return arvud
+        paarid = []
+
+        for i, el in enumerate(arvud):
+            el = el.strip()
+
+            if re.search(r'^\d+$', el):
+                x1 = x2 = int(el)
+            elif re.search(r'^\d+\s*-\s*\d+$', el):
+                x1, x2 = map(int, re.split(r'-', el))
+            elif re.search(r'-\s*\d+', el):
+                x1, x2 = 1, int(el[1:])
+            elif re.search(r'\d+\s*-', el):
+                x1, x2 = int(el[:-1]), 10**6
+            else:
+                print(f"Element '{el}' on sobimatul kujul.")
+                break
+
+            if x1 == 0:
+                print(f"Lehenumber ei või olla null: '{el}'.")
+                break
+            if x1 > x2:
+                print(f"Vahemiku '{el}' algus on suurem kui lõpp.")
+                break
+            ind = next((j for j, (y1, y2) in enumerate(paarid[:i]) if x1 <= y2 and y1 <= x2), -1)
+            if ind != -1:
+                print(f"Lehed {arvud[ind]} ja {el} kattuvad.")
+                break
+            paarid.append((x1-1, x2-1))
+        else:
+            return paarid
 
 def jaga_failid(parandamine=False):
     """
@@ -196,70 +216,69 @@ def moodusta_tagasiside():
             zipkogunimi = os.path.join(zipkaustanimi, failinimi)
             z.write(failitee, zipkogunimi)
 
-def asenda_lehed(teine_fail = False):
-    """
-    Asendab pdf-failis antud numbritega lehed samast või teisest failist võetud lehtedega.
-    Lehenumbrid on täisarvud alatest 1st. Järjendid peavad olema sama pikkusega.
-    """
-    pdffailinimi = küsi_failinimi("Sisesta pdf-faili nimi:", "[.]pdf")
-    if not pdffailinimi:
-        return
-
-    lehenumbrid = küsi_lehenumbrid("Sisesta asendatavad lehenumbrid:")
-    if not lehenumbrid:
-        return
-
-    if teine_fail:
-        teisepdffailinimi = küsi_failinimi("Sisesta uute lehtede pdf-faili nimi:", "[.]pdf")
-        if not pdffailinimi:
-            return
-
-    teiselehenumbrid = küsi_lehenumbrid("Sisesta uued lehenumbrid:")
-    if not lehenumbrid:
-        return
-
-    if len(lehenumbrid) != len(teiselehenumbrid):
-        print(f"Lehenumbrite järjendid pole sama pikkusega: {lehenumbrid} ja {teiselehenumbrid}.")
-        return
-
-    pdf_lugeja1 = PdfReader(pdffailinimi)
-    pdf_lugeja2 = PdfReader(teisepdffailinimi) if teine_fail else pdf_lugeja1
-    pdf_kirjutaja = PdfWriter()
-    for i, leht in enumerate(pdf_lugeja1.pages):
-        if i+1 in lehenumbrid:
-            j = teiselehenumbrid[lehenumbrid.index(i+1)]-1
-            if j < len(pdf_lugeja2.pages):
-                leht = pdf_lugeja2.pages[j]
-        pdf_kirjutaja.add_page(leht)
-    pdf_kirjutaja.write(pdffailinimi)
-
 def töötle_lehti(tegevus):
     """
-    Rakendab faili lehtedele nõutud tegevust.
+    Rakendab pdf-faili lehtedele etteantud tegevust.
     """
-
     pdffailinimi = küsi_failinimi("Sisesta pdf-faili nimi:", "[.]pdf")
     if not pdffailinimi:
         return
+    pdf_lugeja1 = PdfReader(pdffailinimi)
+    X = len(pdf_lugeja1.pages)
 
     lehenumbrid = küsi_lehenumbrid("Sisesta lehenumbrid:")
     if not lehenumbrid:
         return
 
-    pdf_lugeja = PdfReader(pdffailinimi)
+    if tegevus == "asenda_lehed":
+        teisepdffailinimi = küsi_failinimi("Sisesta uute lehtede pdf-faili nimi:", "[.]pdf")
+        if not pdffailinimi:
+            return
+        pdf_lugeja2 = PdfReader(teisepdffailinimi)
+        Y = len(pdf_lugeja2.pages)
+
+    if tegevus in ["asenda_lehed", "muuda_järjestust"]:
+        teiselehenumbrid = küsi_lehenumbrid("Sisesta uued lehenumbrid:")
+        if not lehenumbrid:
+            return
+        if len(lehenumbrid) != len(teiselehenumbrid):
+            print(f"Lehenumbrite järjendid pole sama pikkusega.")
+            return
+
     pdf_kirjutaja = PdfWriter()
-    for i, leht in enumerate(pdf_lugeja.pages):
-        if i+1 in lehenumbrid:
-            if tegevus == "pööra_ümber":
-                leht.rotate(180)
-                pdf_kirjutaja.add_page(leht)
-        else:
+
+    i, x = 0, 0
+    x1, x2 = lehenumbrid[0]
+    while x < X:
+        if x < x1:
+            leht = pdf_lugeja1.pages[x]
             pdf_kirjutaja.add_page(leht)
+            x += 1
+        else:
+            if tegevus == "asenda_lehed":
+                y1, y2 = teiselehenumbrid[i]
+                for y in range(min(y1, Y), min(y2+1, Y)):
+                    leht = pdf_lugeja2.pages[y]
+                    pdf_kirjutaja.add_page(leht)
+            elif tegevus == "muuda_järjestust":
+                y1, y2 = teiselehenumbrid[i]
+                for y in range(min(y1, X), min(y2+1, X)):
+                    leht = pdf_lugeja1.pages[y]
+                    pdf_kirjutaja.add_page(leht)
+            elif tegevus == "pööra_ümber":
+                for y in range(min(x1, X), min(x2+1, X)):
+                    leht = pdf_lugeja1.pages[y]
+                    leht.rotate(180)
+                    pdf_kirjutaja.add_page(leht)
+            x = x2 + 1
+            i += 1
+            x1, x2 = lehenumbrid[i] if i < len(lehenumbrid) else (X, X)
     pdf_kirjutaja.write(pdffailinimi)
 
-
-if __name__ == "__main__":
-
+def main():
+    """
+    Põhimenüü tegevuste sooritamiseks.
+    """
     failinimed = [failinimi for failinimi in os.listdir() if failinimi.endswith('.pdf')]
     if len(failinimed) == 0:
         print("Ei leidnud kaustast ühtegi pdf-faili.")
@@ -291,9 +310,9 @@ if __name__ == "__main__":
         elif sisestus == "4":
             moodusta_tagasiside()
         elif sisestus == "5":
-            asenda_lehed(True)
+            töötle_lehti("asenda_lehed")
         elif sisestus == "6":
-            asenda_lehed()
+            töötle_lehti("muuda_järjestust")
         elif sisestus == "7":
             töötle_lehti("pööra_ümber")
         elif sisestus == "8":
@@ -301,3 +320,6 @@ if __name__ == "__main__":
         elif sisestus == "0" or sisestus == "":
             break
         print()
+
+if __name__ == "__main__":
+    main()

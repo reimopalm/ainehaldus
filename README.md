@@ -65,7 +65,7 @@ teine_tükeldatav_fail.pdf
 
 * 4 - Moodusta tagasiside. Paneb tulemuskaustas olevatest pdf-failidest kokku tagasisidefaili, mille saab Moodle'i ülesande vahendis kõigile korraga tagasisidena üles laadida. Vajab tööks selle ülesande hindamise töölehte (csv-faili), mille saab alla laadida Moodle'ist ülesande esituste vaatest.
 
-* 5 - Asenda lehed. Asendab pdf-failis lehed teise pdf-faili lehtedega. Ette antakse pdf-faili nimi, asendatatavate lehtede numbrite loend, teise pdf-faili nimi, teise pdf-faili lehtede numbrite loend. Lehenumbrite loendid peavad olema sama pikkusega, eraldajaks tühik, koma või semikoolon.
+* 5 - Asenda lehed. Asendab pdf-failis lehed teise pdf-faili lehtedega. Ette antakse pdf-faili nimi, asendatatavate lehtede numbrite loend, teise pdf-faili nimi, teise pdf-faili lehtede numbrite loend. Lehed võib ette anda üksiknumbrite või vahemikena, eraldajaks tühikud, komad või semikoolonid, näiteks 3, 5-7, 9. Loendid peavad koosnema samast arvust gruppidest.
 
 * 6 - Muuda lehtede järjestust. Järjestab pdf-failis lehed ümber. Ette antakse pdf-faili nimi ja kaks sama pikka lehenumbrite loendit. Tulemusena asendatakse esimeses loendis nimetatud lehed teises loendis nimetatud lehtedega.
 
