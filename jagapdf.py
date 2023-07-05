@@ -91,6 +91,7 @@ def küsi_lehenumbrid(küsimus):
                 break
             paarid.append((x1-1, x2-1))
         else:
+            paarid.sort()
             return paarid
 
 def jaga_failid(parandamine=False):

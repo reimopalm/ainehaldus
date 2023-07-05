@@ -71,36 +71,74 @@ def loo_parandamine(esitajad, punktid):
         punktid (list): Ülesannete punktide arvude järjend
 
     """
+    nimi, laiend = os.path.splitext(PARANDAMISEFAILINIMI)
+    abifailinimi = f"{nimi}2{laiend}"
     try:
-        f = open(PARANDAMISEFAILINIMI, "a")
+        abifail = open(abifailinimi, "w")
     except:
-        print("Parandamise faili ei saa avada")
+        print("Ei saa avada abifaili")
         return
 
+    # Kopeerida ümber senine info
+    olemasolevad = {}
+    if os.path.isfile(PARANDAMISEFAILINIMI):
+        try:
+            parandamisefail = open(PARANDAMISEFAILINIMI)
+        except:
+            print("Ei saa avada parandamise faili")
+            return
+        nimed = set(re.sub(r'[\W\d]+$', '', nimi) for nimi in esitajad.keys())
+        nime_otsing = re.compile(r'^#\s*(?:[\s-][^\W\d]+[.]?){2,}(?:\s+\d+)?')
+        info_otsing = re.compile(r'^[ETKNRLP]\s+\d{1,2}[.]\d{1,2}\s\d{1,2}:\d{2}(?:\s+\d+){1,}')
+        nimi = None
+        olemas = False
+        for rida in parandamisefail:
+            m = re.search(nime_otsing, rida)
+            if m:
+                uus_nimi = re.sub(r'^\W+|[\W\d]+$', '', m.group(0))
+                osad = re.sub(r'[-.]', ' ', uus_nimi).split()
+                if len(osad) >= 2 and sum(len(s)>1 for s in osad)>1 and all(s.istitle() for s in osad):
+                    nimi = uus_nimi
+                    olemas = nimi in nimed
+                    if olemas:
+                        olemasolevad[nimi] = []
+                        rida = re.sub(nime_otsing, '# <--{nimi}-->', rida)
+            elif olemas and re.search(info_otsing, rida):
+                rida = re.sub(info_otsing, '<--{info}-->', rida)
+            if olemas:
+                olemasolevad[nimi].append(rida)
+            else:
+                abifail.write(rida)
+        parandamisefail.close()
+
+    # Lisada uus info
     jär_esitajad = sorted(esitajad.items(), key=lambda kv: kv[1]['kuupäev'])
-
     for nr, esitaja in enumerate(jär_esitajad, start=1):
-        if f.tell() != 0:
-            f.write("\n\n")
-
-        # Nimi
-        f.write(f"* {esitaja[1]['kaust']}\n\n")
-
-        # Ülesannete päised
-        if len(punktid) > 1:
-            for ülnr, ülpun in enumerate(punktid, start=1):
-                f.write(f"{ülnr}. (/{ülpun})\n\n")
+        kp = esitaja[1]['kuupäev']
+        inforida = "ETKNRLP"[datetime.date(kp[0], kp[1], kp[2]).weekday()]
+        inforida += f"    {kp[2]}.{kp[1]:02d} {kp[3]}:{kp[4]:02d}"
+        inforida += f"    {esitaja[1]['esitustearv']} {nr}"
+        kaust = esitaja[1]['kaust']
+        nimi = re.sub(r'[\W\d]+$', '', kaust)
+        if nimi in olemasolevad:
+            abifail.write(''.join(olemasolevad[nimi]).replace('<--{nimi}-->', kaust)
+                          .replace('<--{info}-->', inforida))
         else:
-            f.write(f"(/{punktid[0]})\n\n")
+            abifail.write(f"# {kaust}\n\n")
+            if len(punktid) > 1:
+                for ülnr, ülpun in enumerate(punktid, start=1):
+                    abifail.write(f"{ülnr}. (/{ülpun})\n\n")
+            else:
+                abifail.write(f"(/{punktid[0]})\n\n")
+            abifail.write(f"{inforida}\n\n")
+    abifail.close()
 
-        # Kuupäev ja kellaaeg
-        kp = esitaja[1]['kuupäev']  # esitaja[1] on ajahetke ennik
-        f.write("ETKNRLP"[datetime.date(kp[0], kp[1], kp[2]).weekday()])
-        f.write("    ")
-        f.write(f"{kp[2]}.{kp[1]:02d} {kp[3]}:{kp[4]:02d}    ")
-        f.write(f"{esitaja[1]['esitustearv']} {nr}")
+    # Vormistada lõpptulemus
+    if os.path.isfile(abifailinimi):
+        if os.path.isfile(PARANDAMISEFAILINIMI):
+            os.remove(PARANDAMISEFAILINIMI)
+        os.rename(abifailinimi, PARANDAMISEFAILINIMI)
 
-    f.close()
 
 def on_tehniline_fail(info, ziptüüp):
     """
@@ -242,7 +280,7 @@ def leia_esitajad(failinimi):
     # Lisa esituste arvud
     for esitaja_nimi in esitajad:
         esitajad[esitaja_nimi]['esitustearv'] = len(kuupäevad[esitaja_nimi])
-        
+
     return esitajad
 
     

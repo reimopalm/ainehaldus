@@ -6,7 +6,7 @@ Pythoni programmid ülikooli õppeainete läbiviimisel sagedamini ettetulevate t
 
 Paigutab Moodle'i testi vastused ja punktide arvud ülevaatlikult Exceli tabelisse. Sobib näiteks testiküsimuste toimimise uurimiseks, samuti vastuste käsitsi ülevaatamiseks.
 
-### Kasutamine
+**Kasutamine**
 
 1. Laadida alla kaks faili, testi hinnete alt punktide tabel ja testi vastuste alt vastuste tabel, mõlemad csv-vormingus, ning tõsta sobivasse kausta.
 2. Selles kaustas olles käivitada programm `jagamoodletestid`.
@@ -26,22 +26,22 @@ Jagab Moodle'ist allalaaditud esituste zip-failis olevad tööd esitajate järgi
 * Lisaks moodustab parandamise jaoks abifaili kõigi esitajate nimedega ajalises järjekorras.
 * Toetab korduvat käivitamist: uuest failist pakib lahti ainult need esitused, kus on midagi muutnud.
 
-### Kasutamine
+**Kasutamine**
 
 1. Ülesande või VPL-harjutuse vahendist allalaaditud fail tõsta sobivasse kausta.
 2. Selles kaustas olles käivitada programm `jagamoodlefailid`.
 3. Programm püüab sisendfaili ise üles leida. Kui ta seda ei suuda, siis küsib failinime.
 4. Sisestada ülesannete maksimaalsed punktide arvud ühes reas. Mitme arvu puhul eraldada need üksteisest tühiku, koma või semikooloniga.
 
-Tulemuseks tekib iga õppija kohta alamkaust, mille sisuks kõik tema esitatud failid. Lisaks moodustatakse parandamise jaoks fail `parandamine.txt`, kuhu võib kirjutada ülesannete punktid ja tagasiside.
+Tulemuseks tekib iga õppija kohta alamkaust, milles asuvad kõik tema esitatud failid. Lisaks moodustatakse parandamise jaoks fail `parandamine.txt`, kuhu võib kirjutada ülesannete punktid ja tagasiside.
 
-Kui esitust on muudetud, siis paigutab selle uude alamkausta, mille nime lõpus on järjekorranumber, samuti lisab uue kirje parandamise faili lõppu. Olemasolevaid andmeid üle ei kirjuta.
+Kui esitust on muudetud, siis paigutab selle uude alamkausta, mille nime lõpus on järjekorranumber. Olemasolevaid faile üle ei kirjuta. Parandamise failis tõstab vastava kirje koos tekstiga faili lõppu, seda võib seejärel muuta.
 
 ## jagapdf.py
 
 Võimaldab teha pdf-failidega mitmesuguseid tegevusi. Mõeldud eeskätt pabertööde sisseskannimisel saadud pdf-failide töötlemiseks, aga enamikku tegevustest saab teha ükskõik milliste pdf-failidega.
 
-### Kasutamine
+**Kasutamine**
 
 1. Kõik töödeldavad pdf-failid tõsta sobivasse kausta.
 2. Käivitada selles kaustas olles programm `jagapdf` ja sisestada tegevuse number.
@@ -77,19 +77,19 @@ teine_tükeldatav_fail.pdf
 
 Loob parandamise abifaili `parandamine.txt`.
 
-### Kasutamine
+**Kasutamine**
 
-* Luua sobivasse kausta fail `nimed.txt`, kuhu panna kirja õppijate nimed soovitavas järjekorras.
+* Luua soovitavasse kausta fail `nimed.txt`, kuhu panna kirja õppijate nimed soovitavas järjekorras.
 * Käivitada programm `looparandamine`.
-* Sisestada ülesannete maksimumpunktide arvud ühe reana, eraldajaks tühik, koma, semikoolon.
+* Sisestada ülesannete maksimumpunktide arvud ühe reana, eraldajaks tühikud, komad või semikoolonid.
 
-Tulemuseks on fail `parandamine.txt`, kuhu võib kirjutada iga õppija tagasiside ja ülesannete eest saadud punktide arvud.
+Tulemuseks on fail `parandamine.txt`, kuhu võib kirjutada iga õppija tagasiside ja ülesannete eest saadud punktide arvud. Kui õppija nimi on parandamise failis juba olemas, siis tõstab vastava kirje koos tekstiga faili lõppu, seda võib seejärel muuta.
 
 ## koguprogrammid.py
 
 Kogub osalejate Pythoni programmid alamkaustadest kokku üheks failiks `programmid.py`. Sobib näiteks siis, kui on vaja ühe osaleja kõik programmid ühte kohta koondada või kui on vaja kiiresti võrrelda paljude osalejejate Thonny logifailide sisu tegelikult esitatud programmidega.
 
-### Kasutamine
+**Kasutamine**
 
 1. Luua põhikausta fail `nimed.txt`, kus on kirjas õppijate nimed soovitavas järjekorras.
 2. Käivitada programm `koguprogrammid`.
@@ -103,7 +103,7 @@ Tulemuseks moodustatakse fail `programmid.py`, kus on järjest kirjas kõik leit
 
 Kogub projektide hindamise küsitlusest kokku vastused ja rühmitab need projektide ning hindajate järgi. 
 
-### Kasutamine
+**Kasutamine**
 
 1. Laadida Moodle'ist alla projektide hindamise küsitluse vastuste fail csv-vormingus.
 2. Käivitada programm `projektitagasiside`.

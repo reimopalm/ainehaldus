@@ -45,21 +45,20 @@ def küsi_alamkaustad():
 
 def loe_nimed(failinimi):
     """
-    Loeb failist nimed. Püüab mittesobiva info vahele jätta.
+    Loeb failist nimed. Mittesobiva info püüab vahele jätta.
     """
     try:
         with open(failinimi) as f:
             nimed = []
+            nime_otsing = re.compile(r'^\W*([^\W\d]+[.]?(?:[ -][^\W\d]+[.]?)+)[\W\d]*$')
             for rida in f:
-                rida = re.sub(r'\d', '.', rida)
-                m = re.search(r"^[^\w]*(\w\w[ \w]*)[^\w]*$", rida)
+                m = re.search(nime_otsing, rida)
                 if m:
                     nimed.append(m.group(1))
             return nimed
     except:
         print(f"Faili {failinimi} ei saa avada.")
         return []
-
 
 def kogu_üks(isikunimi, alamkaustanimed):
     """

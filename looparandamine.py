@@ -50,20 +50,93 @@ def küsi_punktid():
 
 def loe_nimed(failinimi):
     """
-    Loeb failist nimed. Püüab mittesobiva info vahele jätta.
+    Loeb failist nimed. Mittesobiva info püüab vahele jätta.
     """
     try:
         with open(failinimi) as f:
             nimed = []
+            nime_otsing = re.compile(r'^\W*([^\W\d]+[.]?(?:[ -][^\W\d]+[.]?)+)[\W\d]*$')
             for rida in f:
-                rida = re.sub(r'\d', '.', rida)
-                m = re.search(r"^[^\w]*(\w\w[ \w]*)[^\w]*$", rida)
+                m = re.search(nime_otsing, rida)
                 if m:
                     nimed.append(m.group(1))
             return nimed
     except:
         print(f"Faili {failinimi} ei saa avada.")
         return []
+
+def loo_parandamine(nimed, punktid):
+    """
+    Loob etteantud nimede põhjal parandamise faili. Kui nimi on juba failis olemas,
+    siis tõstab olemasoleva info ümber.
+
+    Parameetrid:
+        nimed (list): Esitajate nimede järjend
+        punktid (list): Ülesannete punktide arvude järjend
+    """
+    nimi, laiend = os.path.splitext(PARANDAMISEFAILINIMI)
+    abifailinimi = f"{nimi}2{laiend}"
+    try:
+        abifail = open(abifailinimi, "w")
+    except:
+        print("Ei saa avada abifaili")
+        return
+
+    # Kopeerida ümber senine info
+    olemasolevad = {}
+    if os.path.isfile(PARANDAMISEFAILINIMI):
+        try:
+            parandamisefail = open(PARANDAMISEFAILINIMI)
+        except:
+            print("Ei saa avada parandamise faili")
+            return
+        nime_otsing = re.compile(r'^#\s*(?:[\s-][^\W\d]+[.]?){2,}(?:\s+\d+)?')
+        info_otsing = re.compile(r'^[ETKNRLP]\s+\d{1,2}[.]\d{1,2}\s\d{1,2}:\d{2}(?:\s+\d+){1,}')
+        nimi = None
+        olemas = False
+        for rida in parandamisefail:
+            m = re.search(nime_otsing, rida)
+            if m:
+                uus_nimi = re.sub(r'^\W+|[\W\d]+$', '', m.group(0))
+                osad = re.sub(r'[-.]', ' ', uus_nimi).split()
+                if len(osad) >= 2 and sum(len(s) > 1 for s in osad) > 1 and all(s.istitle() for s in osad):
+                    nimi = uus_nimi
+                    olemas = nimi in nimed
+                    if olemas:
+                        olemasolevad[nimi] = []
+                        rida = re.sub(nime_otsing, '# <--{nimi}-->', rida)
+            elif olemas and re.search(info_otsing, rida):
+                rida = re.sub(info_otsing, '<--{info}-->', rida)
+            if olemas:
+                olemasolevad[nimi].append(rida)
+            else:
+                abifail.write(rida)
+        parandamisefail.close()
+
+    # Lisada uus info
+    praegu = datetime.datetime.now()
+    for nr, nimi in enumerate(nimed, start=1):
+        inforida = f"{'ETKNRLP'[praegu.weekday()]}    {praegu.day}.{praegu.month:02d} " \
+                   f"{praegu.hour}:{praegu.minute:02d}    {nr}"
+        if nimi in olemasolevad:
+            abifail.write(''.join(olemasolevad[nimi]).replace('<--{nimi}-->', nimi)
+                          .replace('<--{info}-->', inforida))
+        else:
+            abifail.write(f"# {nimi}\n\n")
+            if len(punktid) > 1:
+                for ülnr, ülpun in enumerate(punktid, start=1):
+                    abifail.write(f"{ülnr}. (/{ülpun})\n\n")
+            else:
+                abifail.write(f"(/{punktid[0]})\n\n")
+            abifail.write(f"{inforida}\n\n")
+    abifail.close()
+
+    # Vormistada lõpptulemus
+    if os.path.isfile(abifailinimi):
+        if os.path.isfile(PARANDAMISEFAILINIMI):
+            os.remove(PARANDAMISEFAILINIMI)
+        os.rename(abifailinimi, PARANDAMISEFAILINIMI)
+
 
 def main():
     """
@@ -81,33 +154,8 @@ def main():
     if not nimed:
         return
 
-    praegu = datetime.datetime.now()
+    loo_parandamine(nimed, punktid)
 
-    try:
-        f = open(PARANDAMISEFAILINIMI, "a")
-    except:
-        print("Parandamise faili ei saa avada")
-        return
-
-    for i, nimi in enumerate(nimed, start=1):
-        if f.tell() != 0:
-            f.write("\n\n")
-
-        # Nimi
-        f.write(f"* {nimi}\n\n")
-
-        # Ülesannete päised
-        if len(punktid) > 1:
-            for ülnr, ülpun in enumerate(punktid, start=1):
-                f.write(f"{ülnr}. (/{ülpun})\n\n")
-        else:
-            f.write(f"(/{punktid[0]})\n\n")
-
-        # Kuupäev ja kellaaeg
-        f.write(f"{'ETKNRLP'[praegu.weekday()]}    {praegu.day}.{praegu.month:02d} "
-                f"{praegu.hour}:{praegu.minute:02d}    {i}")
-
-    f.close()
 
 if __name__ == "__main__":
     main()
