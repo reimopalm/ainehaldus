@@ -228,7 +228,6 @@ def leia_esitajad(failinimi):
 
     with zipfile.ZipFile(failinimi, 'r') as z:
         for info in z.infolist():
-
             if on_tehniline_fail(info, ziptüüp):
                 continue
 

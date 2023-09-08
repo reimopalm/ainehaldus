@@ -112,34 +112,42 @@ def teisenda_küsimused(tabel, n):
     for rida in tabel:
         küsimus = rida[n]
 
-        # Sorteeri valikvastustega küsimuse vastusevariandid
-        m = re.search(r'\n: ((?:.*(?:; |$)){2,})', küsimus, re.S)
-        if m:
-            variandid = m.group(1).split('; ')
-            uusosa = '; '.join(sorted(map(str.strip, variandid)))
-            küsimus = küsimus.replace(m.group(0), f'\n: {uusosa}')
-
-        # Lünkteksti valikvastustega küsimused
-        alamosad = re.findall(r'\{(?:[^\n]*; )+[^\n]*}', küsimus)
-        for alamosa in alamosad:
-            variandid = alamosa[1:-1].split("; ")
-            uusosa = '; '.join(sorted(map(str.strip, variandid)))
-            küsimus = küsimus.replace(alamosa, f'{{{uusosa}}}')
-
         # Vastavusse seadmise küsimused
-        m = re.search(r'\n\s*{(.*(?:; |))} -> {(.*(?:; |))}$', küsimus, re.S)
+        m = re.search(r'\s+{([^{]*(?:; |))} -> {(.*(?:; |))}$', küsimus, re.S)
         if m:
             variandid = [m.group(i+1).split("; ") for i in range(2)]
             uusosa = [sorted(map(str.strip, variandid[i])) for i in range(2)]
             küsimus = küsimus.replace(m.group(0), f"\n{{{uusosa[0]}}} -> {{{uusosa[1]}}}")
 
-        # Pildile ja teksti lohistamise küsimused
-        alamosad = re.findall(r'; \[\[.*?]] -> \{.*?}', küsimus, re.S)
-        for alamosa in alamosad:
-            variandid = alamosa[alamosa.index('{'):-1].split(' / ')
-            variandid = [re.sub(r'^\d+\.\s', '', s) for s in variandid]
-            uusosa = ' / '.join(sorted(map(str.strip, variandid)))
-            küsimus = küsimus.replace(alamosa, alamosa[:alamosa.index('{')] + uusosa + '}')
+        else:
+
+            # Pildile ja teksti lohistamise küsimused
+            m = re.search(r'; \[\[.*?]] -> \{.*?}', küsimus, re.S)
+            if m:
+                alamosad = re.findall(r'; \[\[.*?]] -> \{.*?}', küsimus, re.S)
+                for alamosa in alamosad:
+                    variandid = alamosa[alamosa.index('{'):-1].split(' / ')
+                    variandid = [re.sub(r'^\d+\.\s', '', s) for s in variandid]
+                    uusosa = ' / '.join(sorted(map(str.strip, variandid)))
+                    küsimus = küsimus.replace(alamosa, alamosa[:alamosa.index('{')] + uusosa + '}')
+
+            else:
+
+                # Valikvastustega küsimuse vastusevariandid
+                m = re.search(r'(?:\s+|[.?]): ((?:.*(?:; |$)){2,})', küsimus, re.S)
+                if m:
+                    variandid = m.group(1).split('; ')
+                    uusosa = '; '.join(sorted(map(str.strip, variandid)))
+                    küsimus = küsimus.replace(m.group(0), f'\n: {uusosa}')
+
+                else:
+
+                    # Lünkteksti valikvastustega küsimused
+                    alamosad = re.findall(r'\{(?:[^\n]*; )+[^\n]*}', küsimus)
+                    for alamosa in alamosad:
+                        variandid = alamosa[1:-1].split("; ")
+                        uusosa = '; '.join(sorted(map(str.strip, variandid)))
+                        küsimus = küsimus.replace(alamosa, f'{{{uusosa}}}')
 
         rida[n] = küsimus
         küsimused.add(küsimus)
