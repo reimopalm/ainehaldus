@@ -85,13 +85,13 @@ def küsi_lehenumbrid(küsimus):
             if x1 > x2:
                 print(f"Vahemiku '{el}' algus on suurem kui lõpp.")
                 break
-            ind = next((j for j, (y1, y2) in enumerate(paarid[:i]) if x1 <= y2 and y1 <= x2), -1)
+            ind = next((j for j, (y1, y2) in enumerate(paarid[:i])
+                        if x1 - 1 <= y2 and y1 <= x2 - 1), -1)
             if ind != -1:
                 print(f"Lehed {arvud[ind]} ja {el} kattuvad.")
                 break
             paarid.append((x1-1, x2-1))
         else:
-            paarid.sort()
             return paarid
 
 def jaga_failid(parandamine=False):

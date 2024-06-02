@@ -43,26 +43,31 @@ def loe_andmed(failinimi):
 
     lugeja = csv.reader(f)
     päiserida = next(lugeja)
-    for küsimus in päiserida[3:]:
+    algus = 3 if re.search('[nN]imi|[nN]ame', päiserida[0]) else 1
+
+    for küsimus in päiserida[algus:]:
         if küsimus not in küsimused:
             küsimused.append(küsimus)
     küsimuste_arv = len(küsimused)
-    if (len(päiserida)-3) % küsimuste_arv != 0:
-        print(f"Päiserea struktuur pole ühtlane: {len(päiserida)-3} küsimust ja {len(küsimused)} erinevat.")
+    if (len(päiserida)-algus) % küsimuste_arv != 0:
+        print(f"Päiserea struktuur pole ühtlane: {len(päiserida)-algus} küsimust ja {len(küsimused)} erinevat.")
         return
 
     for k in range(küsimuste_arv):
-        for j in range(3+k+küsimuste_arv, len(päiserida), küsimuste_arv):
-            if päiserida[3+k] != päiserida[j]:
+        for j in range(algus+k+küsimuste_arv, len(päiserida), küsimuste_arv):
+            if päiserida[algus+k] != päiserida[j]:
                 print(f"Küsimusteplokid pole ühesugused.")
-                print(f"1. ploki {k+1}. küsimus on '{päiserida[3+k]}'")
-                print(f"{(j-3-k)//küsimuste_arv+1}. ploki {k+1}. küsimus on '{päiserida[j]}'")
+                print(f"1. ploki {k+1}. küsimus on '{päiserida[algus+k]}'")
+                print(f"{(j-algus-k)//küsimuste_arv+1}. ploki {k+1}. küsimus on '{päiserida[j]}'")
                 return
 
     for rida in lugeja:
         rida = list(map(str.strip, rida))
-        m = re.search('(?:Projekt|Rühm|Project|Group) (\w+)', rida[1])
-        rida[1] = m.group(1) if m else ""
+        if algus == 3:
+            m = re.search('(?:Projekt|Rühm|Project|Group) (\w+)', rida[1])
+            rida[1] = m.group(1) if m else ""
+        else:
+            rida[1:1] = ["", ""]
         tabel.append(rida)
     f.close()
 
@@ -225,6 +230,7 @@ def main():
     failinimi = os.path.splitext(failinimi)[0] + ".html"
     if os.path.isfile(failinimi):
         os.remove(failinimi)
+
     kirjuta_tulemused(küsimused, projektid, failinimi)
     kirjuta_tulemused(küsimused, hindajad, failinimi)
 
