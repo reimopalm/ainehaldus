@@ -99,9 +99,9 @@ Eeldab, et iga töö jaoks on oma alamkaust, mille all on omakorda õppijate fai
 
 Tulemuseks moodustatakse fail `programmid.py`, kus on järjest kirjas kõik leitud programmid koos osalejate nimede ja programmide nimedega.
 
-## projektitagasiside.py
+## kogutagasiside.py
 
-Kogub projektide hindamise küsitlusest kokku vastused ja rühmitab need projektide ning hindajate järgi. 
+Kogub tagasisideküsitlusest kokku vastused ja rühmitab need küsimuste ja vastajate järgi. Kui tagasiside on antud projektidele, siis rühmitab ka projektide järgi.
 
 **Kasutamine**
 
@@ -110,6 +110,6 @@ Kogub projektide hindamise küsitlusest kokku vastused ja rühmitab need projekt
 
 Kui programm vastuste faili automaatselt üles ei leia, siis küsib selle nime.
 
-Tulemuseks on html-fail, kus on kirjas igale projekti saadud tagasiside ja iga hindaja antud tagasiside.
+Tulemuseks on html-fail, kus on kirjas igale küsimusele antud vastused ja iga vastaja antud vastused. Püüab ise kindlaks teha, kas küsimus oli tekstivastusega või valikvastusega. 
 
-Eeldab, et küsitlus koosneb samasugustest küsimuste plokkidest, kus iga ploki esimene küsimus on hinnatava projekti nimi. Püüab ise kindlaks teha, kas küsimus oli tekstivastusega või valikvastusega. Mittesisukad vastused ja projekti autori poolt omaenda projektile antud valikvastused jätab vahele.
+Projektide hindamise küsitluse puhul eeldab, et küsitlus koosneb ühesugustest küsimuste plokkidest, kus iga ploki esimene küsimus on hinnatava projekti nimi. Mittesisukad vastused ja projekti autori poolt omaenda projektile antud valikvastused jätab vahele.

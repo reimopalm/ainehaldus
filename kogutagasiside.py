@@ -75,7 +75,7 @@ def loe_andmed(failinimi):
 
     return küsimused, tabel
 
-def kirjuta_tulemused(küsimused, sõnastik, failinimi):
+def kirjuta_tulemused(küsimused, sõnastik, failinimi, küsimused_plokkidena):
     """
     Moodustab tulemusfaili. Ette antakse küsimuste järjend ja korrastatud vastuste sõnastik.
     """
@@ -98,7 +98,10 @@ def kirjuta_tulemused(küsimused, sõnastik, failinimi):
         f.write(f'<h2 style="text-align: center;">{pealkiri}</h2>')
 
     # Jaotise pealkiri
-    pealkiri = '(a) Projektide' if proj_kaupa else '(b) Hindajate'
+    if küsimused_plokkidena:
+        pealkiri = '(a) Projektide' if proj_kaupa else '(b) Hindajate'
+    else:
+        pealkiri = '(a) Küsimuste' if proj_kaupa else '(b) Vastajate'
     f.write(f'<h1>{pealkiri} kaupa</h1>\n<h2>Vastuste arvud</h2>')
     for i, küsimus in enumerate(küsimused, start=1):
         f.write(f'Küs {i}. {küsimus}<br>')
@@ -139,7 +142,7 @@ def kirjuta_tulemused(küsimused, sõnastik, failinimi):
         for k, küsimus in enumerate(küsimused):
             f.write(f'<p><b>{küsimus}</b></p>\n')
             vastused = sõnastik[nimi][k]
-            if k == 0:
+            if k == 0 and küsimused_plokkidena:
                 f.write(f'<p>Vastuste arv {sum(vastused.values())}</p>')
                 continue
             if isinstance(vastused, list):
@@ -179,7 +182,7 @@ def main():
       Tekstvastusega küsimuste vastused esitatakse järjendina, valikvastustega küsimuste vastused
       sõnastikuna, kus kirjed on kujul küsimus: vastuste_arv.
     """
-    failinimi = küsi_failinimi("Sisesta failinimi:", r'.*([tT]agasiside|[fF]eedback).*[.]csv')
+    failinimi = küsi_failinimi("Sisesta failinimi:", r'[.]csv')
     if not failinimi:
         return
 
@@ -204,15 +207,19 @@ def main():
             tüübid[k] = VALIKVASTUS
 
     # Kogu andmed kokku
+    küsimused_plokkidena = len(tabel[0]) > 3 + küsimuste_arv and tüübid[0] == VALIKVASTUS
     projektid = {}
     hindajad = {}
     for rida in tabel:
         rühm_nimi = (rida[1], rida[0])
         hindajad[rühm_nimi] = [[] if tüüp == TEKSTVASTUS else {} for tüüp in tüübid]
         for j in range(3, len(rida), küsimuste_arv):
-            projekti_nimi = rida[j]
-            if projekti_nimi == "":
-                continue
+            if küsimused_plokkidena:
+                projekti_nimi = rida[j]
+                if projekti_nimi == "":
+                    continue
+            else:
+                projekti_nimi = "Kõik küsimused"
             if projekti_nimi not in projektid:
                 projektid[projekti_nimi] = [[] if tüüp == TEKSTVASTUS else {} for tüüp in tüübid]
             for k, tüüp in enumerate(tüübid):
@@ -231,8 +238,8 @@ def main():
     if os.path.isfile(failinimi):
         os.remove(failinimi)
 
-    kirjuta_tulemused(küsimused, projektid, failinimi)
-    kirjuta_tulemused(küsimused, hindajad, failinimi)
+    kirjuta_tulemused(küsimused, projektid, failinimi, küsimused_plokkidena)
+    kirjuta_tulemused(küsimused, hindajad, failinimi, küsimused_plokkidena)
 
 if __name__ == "__main__":
     main()
